@@ -109,7 +109,7 @@ An application’s architecture is distinctly different from the network archite
 
 - Example:
   
-    ```
+    ```text
     GET /somedir/page.html HTTP/1.1  
 
     Host: www.someschool.edu 
@@ -142,7 +142,8 @@ An application’s architecture is distinctly different from the network archite
   - 404 Not Found: requested document not found on the server.
   - 505 HTTP Version Not Supported: the requested HTTP protocol version is not supported by the server.
 - Example:
-  ```
+  
+  ```text
     HTTP/1.1 200 OK 
     Connection: close
     Date: Tue, 09 Aug 2011 15:44:04 GMT 
@@ -194,7 +195,7 @@ An application’s architecture is distinctly different from the network archite
 
 ### 2.6. Local cache
 
-- Web cache in the cache on the local host, not on a proxy server. 
+- Web cache in the cache on the local host, not on a proxy server.
 - Local cache can be used for:
   - Offline web-browsing
   - Browse web pages more efficiently if the content of a web pages does not change, so we can use the content in the cache.
