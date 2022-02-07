@@ -291,3 +291,37 @@ An application’s architecture is distinctly different from the network archite
 - With this service, the user communicates with its remote mailbox via HTTP.
 - When a recipient wants to access a message in his mailbox, the email message is sent from mail server to browser using HTTP protocol rather than the POP3 or IMAP protocol.
 - When a sender wants to send an email message, the email message is sent from the browser to the mail server over HTTP rather than over SMTP. The mail server, however, still sends messages to, and receives messages from, other mail servers using SMTP.
+
+## 5. DNS
+
+### 5.1. Services provided by DNS
+
+- DNS (Domain Name System) is a distributed database implemented in a hierachy of DNS servers, and an application-layer protocol that allows hosts to query the distributed database.
+- DNS is commonly employed by other application-layer protocols (HTTP, SMTP, FTP) to translate user-supplied hostnames to IP addresses.
+- In order for the user's host to be able to send an HTTP request message to the Web server www.someschool.edu, the user's host must first obtain the IP address of www.someschool.edu:
+  - The same user machine runs the client side of the DNS application.
+  - The browser extracts the hostname from the URL and passes the hostname to the client side of the DNS application.
+  - The DNS client sends a query containing the hostname to a DNS server.
+  - the DNS client receives a reply, which includes the IP address for the hostname.
+  - Once the browser receives the IP address from DNS, it can initiate a TCP connection to the HTTP server process located at port 80 at that IP address.
+- Some DNS services:
+  - Host aliasing: a host with a complicated hostname can have one or more alias names.
+  - Mail server aliasing: a mail server hostname can have one or more alias names.
+  - Load distribution: DNS is used to perform load distribution among replicated servers, such as replicated Web servers. For replicated Web servers, a set of IP addresses is thus associated with one canonical hostname.
+
+### 5.2. How DNS works?
+
+- Distributed, Hierarchial Database:
+  - The DNS uses a large number of servers, organized in a hierarchical fashion and distributed around the world.
+  - No single DNS server has all of the mappings for all of the hosts, instead, the mappings are distributed across the DNS servers.
+  - Three classes of DNS servers:
+    - Root DNS servers: there are 13 root DNS servers (labeled A through M), most of which are located in North America.
+    - Top-level domain (TLD) servers: these servers are responsible for top-level domains such as com, org, net, edu and gov, and all of the country top-level domains such as uk, fk, ca, vn...
+    - Authoritative DNS servers: every organization with publicly accessible hosts on the Internet must provide publicly accessible DNS records that map the names of those hosts to IP addresses.
+
+  ![10.png](img/10.png)
+
+  - Suppose a DNS client wants to determine the IP address for the hostname *www.amazon.com*:
+    - The client first contacts one of the root servers, which returns IP addresses for TLD servers for the top-level domain *com*.
+    - The client then contacts one of these TLD servers, which returns the IP address of an authoritative server for *amazon.com*.
+    - The client contacts one of the authoritative servers for *amazone.com*, which returns the IP address for the hostname *www.amazon.com*.
