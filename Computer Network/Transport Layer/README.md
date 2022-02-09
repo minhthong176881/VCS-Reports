@@ -60,3 +60,131 @@
     - The port numbers ranging from 0 - 1023 are called well-known port numbers and are restricted -> they are reserved for use by well-known application protocols such as HTTP (port 80), FTP (port 21)...
     - When develop a new application, a port number must be assigned to the application.
 - Each socket in the host could be assigned a port number, and when a segment arrives at the host, the transport layer examines the destination port number in the segment and directs the segment to the corresponding socket.
+
+## 3. Connectionless Tranport: UDP
+
+- UDP takes messages from the application process, attaches source and destination port number fields for the multiplexing/demultiplexing service, add two other small fields, and passes the resulting segment to the network layer.
+- The network layer encapsulates the transport-layer segment into an IP datagram and then makes a bets-effort attempt to deliver the segment to the receiving host.
+- If the segment arrives at the receiving host, UDP uses the destination port number to deliver the segment's data to the correct application process.
+- UDP has no handshaking between sending and receiving transport-layer entites before sending a segment.
+
+-> UDP is said to be *connectionless*.
+
+- UDP benefits in many applications:
+  - Finer application-level control over what data is sent, and when: as soon as an application process passes data to UDP, UDP will package the data inside a UDP segment and immediately pass the segment to the network layer. Since real-time applications often require a minimum sending rate, do not want to overly delay segment transmission, and can tolerate some data loss, these applications prefer UDP rather than TCP.
+  - No connection establishment: blasts away data as fast as desired -> does not introduce any delay to establish a connection.
+  - No connection state: UDP does not maintain connection state and does not track any of parameters: congestion-control parameters, sequence and acknowledgment number parameters... -> a server can support many more active clients when the application runs over UDP rather than TCP.
+  - Small packet header overhead: the TCP segment has 20 bytes of header overhead in every segment, whereas UDP has only 8 bytes of overhead.
+
+### 3.1. UDP Checksum
+
+- The UDP checksum provides for error detection.
+- The checksum is used to determine whether bits within the UDP segment has been altered (for example, by noise in the links or while stored in a router) as it moved from source to destination.
+- UDP at the sender side performs the 1s complement of the sum of all the 16-bit words in the segment, with any overflow cncounterd during the sum being wrapped around.This result is put in the checksum field of the UDP segment.
+- Example:
+  - We have the following three 16-bit words:
+
+      ```text
+        0110011001100000
+        0101010101010101
+        1000111100001100
+      ```
+
+  - The sum of first 2 of these 16-bit words is:
+  
+      ```text
+        0110011001100000
+      + 0101010101010101
+      = 1011101110110101
+      ```
+
+  - Adding the third word to the above sum gives:
+
+      ```text
+          1011101110110101
+        + 1000111100001100
+      = 1 0100101011000001 -> wrap-around
+      = 0100101011000010 <- sum
+      ```
+  
+  - The 1s complement is obtained by converting all the 0s to 1s and converting all the 1s to 0s -> the 1s complement of sum = 0100101011000010 is 1011010100111101, which becomes the checksum.
+  - At the receiver, all four 16-bit words are added, including the checksum.
+  - If no errors are introduced into the packet, the sum at the receiver will be 1111111111111111.
+  - If one of the bits is a 0, then the errors have been introduced to the packet.
+- Although UDP provides error checking, it does not do anything to recover from an error.
+- Some implementations of UDP simply discard the damaged segment; others pass the damaged segment to the application with a warning.
+
+### 3.2. UDP Segment structure
+
+![4.png](img/4.png)
+
+- The UDP header has only 4 fields, each consisting of 2 bytes.
+- The port numbers allow the destination host to pass the application data to the correct process running on the destination end system.
+- The length field specifies the number of bytes in the UDP segment (header + data).
+- The checksum is used by receiving host to check whether errors have been introduced into the segment.
+
+## 4. Connection-Oriented Transport: TCP
+
+### 4.1. The TCP Connection
+
+- TCP is said to be connection-oriented because befor one application process can begin to send data to another, the two processes must first "handshake" with each other - that is, they must send some preliminary segment to each other to establish the parameters of the ensuing data transfer.
+- As part of TCP connection establishment, both sides of the connection will initialize may TCP state variables associated with the TCP connection.
+- TCP protocol runs only in the end systems and not in the intermediate network elements (routers and link-layer switches).
+- A TCP connection provides a **full-duplex service**: If there is a TCP connection between process A on one host and process B on another host, then application-layer data can flow form process A to process B at the same time as application-layer data flows from process B to process A.
+- A TCP connection is also always **point-to-point**: between a single sender and a single receiver.
+- Multicasting, the transfer of data from one sender to may receivers in a single send operation, is not possible with TCP.
+- With TCP, two hosts are company and three are a crowd!
+- Establish TCP connection:
+  - The client application process informs the client transport layer that it wants to establish a connection to a process in the server.
+  - TCP in the client proceeds to establish a TCP connection with TCP in the server.
+  - The client first sends a special TCP segment; the server responds with a second special TCP segment; and finally the client responds again with a third special segment.
+  - The first 2 segments carry no payload (no application-layer data); the third segment may carry a payload.
+
+  -> Three-way handshake.
+
+![5.png](img/5.png)
+
+- Once a TCP connection is established, the two application process can send data to each other.
+- TCP pairs each chunk of client data with a TCP header, thereby forming TCP segments.
+  - The segments are passed down to the network layer, where they are separately encapsulated within network-layer IP datagrams.
+  - The datagrams are then sent into the network.
+  - When TCP receives a segment at the other end, the segment's data is placed in the TCP connection's receive buffer.
+  - The application reads the stream of data from this buffer.
+  - Each side of the connection has its own send and receive buffers.
+
+### 4.2. TCP segment structure
+
+![6.png](img/6.png)
+
+- The TCP segment consists of header fields and a data field.
+- The data field contains a chunk of application data.
+- The maximum amount of data that can be grabbed and placed in a segment (amount of application-layer data in the segment) is limited by the **maximum segment size (MSS)**. The MSS is typically set by first determining the length of the largest link-layer frame (**maximum transmission unit,MTU**) and then setting the MSS to ensure that a TCP segment + TCP/IP header (typically 40 bytes) will fit into a single link-layer frame.
+- When a TCP sends a large file, it typically breaks the file into chunks of size MSS (except for the last chunk, which will often be less than the MSS).
+- A TCP segment header contains:
+  - The 32-bit sequence number field and the 32-bit acknowledgment number field are used by the TCP sender and receiver in implementing a reliable data transfer service.
+  - The 16-bit receive window field is used for flow control.
+  - The 4-bit header length field specifies the length of the TCP header in 32-bit word (typically, the options field is empty, so that the lenght of the typical TCP header is 20 bytes).
+  - The optional and variable-length options field is used when a sender and receiver negotiate the MSS or as a window scaling factor for use in high-speed network. A time-stamping option is also defined.
+  - The flag field contains 6 bits:
+    - The ACK bit is used to indicate that the value carried in the acknowledgment field is valid (the segment contains an acknowledgment for a segment that has been successfully received).
+    - The RST, SYN, FIN bits are used for connection setup and teardown.
+    - Setting the PSH bit indicates that the receiver should pass the data to the upper layer immediately.
+    - The URG bit is used to indicate that there is data in this segment that the sending-side upper-layer entity has marked as "urgent". The location of the last byte of this urgent data is indicated by the 16-bit urgent data pointer field.
+
+**Sequence numbers and Acknowledgment numbres**
+
+- TCP views data as an unstructured, but ordered, stream of bytes.
+- TCP's use of sequence numbers reflects this view in that sequence numbers are over the stream of transmitted bytes and not over the series of transmitted segments.
+- The sequence number for a segment is the byte-stream number of the first byte in the segment.
+
+  ![7.png](img/7.png)
+
+- Example: data stream consists of a file consisting of 500,000 bytes, the MSS is 1,000 bytes, the first byte of the data stream is numbered 0.
+  - The TCP constructs 500 segments out of the data stream.
+  - The first segment gets assigned sequence number 0, the second segment gets assiged sequence number 1,000, and so on.
+  - Each sequence number is inserted in the sequence number field in the header of the appropriate TCP segment.
+
+- The acknowledgement number that one host puts in its segment is the sequence number of the next byte it is expecting from other host.
+- Example: Suppose host A has received all bytes numbered 0 - 535 from B and another segment containing bytes 900-1,000. For some reason host A has not yet received bytes 536 - 899.
+  -> Host A is still waiting for byte 536 in order to re-create B's data stream. -> A's next segment to B will contain 536 in the acknowledgment number field.
+- Because TCP only acknowledges bytes up to the first missing byte in the stream, TCP is said to provide **cumulative acknowledgments**.
