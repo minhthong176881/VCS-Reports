@@ -324,4 +324,71 @@ An application’s architecture is distinctly different from the network archite
   - Suppose a DNS client wants to determine the IP address for the hostname *www.amazon.com*:
     - The client first contacts one of the root servers, which returns IP addresses for TLD servers for the top-level domain *com*.
     - The client then contacts one of these TLD servers, which returns the IP address of an authoritative server for *amazon.com*.
-    - The client contacts one of the authoritative servers for *amazone.com*, which returns the IP address for the hostname *www.amazon.com*.
+    - The client contacts one of the authoritative servers for *amazon.com*, which returns the IP address for the hostname *www.amazon.com*.
+
+- Local DNS sever:
+  - A local DNS severs does not strictly belong to the hierarchy of servers but is nevertheless central to the DNS architecture.
+  - Each IPS - such as a university, an academic department, an employee's company, or a residential IPS - has a local DNS server (also called a default name server).
+  - When a host connects to an ISP, the ISP provides the host with the IP addresses of one or more of its local DNS servers.
+
+  ![11.png](img/11.png)
+
+- Recursive query: is where one DNS server communicates with serveral other DNS servers to hunt down an IP address and return it to the client.
+- Iterative query: is where client communicates directly with each DNS server involved in the lookup.
+- From the example, the query from the requesting host to the local DNS server is recursive, and the remaining queries are iterative.
+
+- DNS caching:
+  - DNS extensively exploits DNS caching in order to improve the delay performance and to reduce the number of DNS messages recocheting around the Internet.
+  - In a query chain, when a DNS server receives a DNS reply, it can cahce the mapping in its local memory. If a hostname/IP address pair is cached in a DNS server and another query arrives to the DNS server for the same hostname, the DNS server can provide the desired IP address, even if it is not authoritative for the hostname.
+  - DNS server discard cached information after period of time (often set to 2 days). 
+
+## 6. Telnet
+
+### 6.1. What is Telnet?
+
+- Telnet (Terminal network) is a network protocol used to virtually access a computer and to provide a two-way, collaborative and text-based communication channel between two machines.
+- It follows an user command Transmission Control Protocol/Internet Protocol (TCP/IP) networking protocol for creating remote sessions.
+- On the web, HTTP and FTP simply enable users to request specific files from remote computers, while, through Telnet, users can log on as a regular user with the privileges they are granted to the specific applications and data on that computer.
+
+### 6.2. How Telnet works?
+
+- Telnet is a type of client-server protocol that can be used to open a command line on a remote computer, typically a server.
+- Telnet works with what is called a virtual terminal connection emulator, or an abstract instance of a connection to a computer, using standard protocols to act like a physical terminal connected to a machine.
+- Users connect remotely to a machine using Telnet, sometimes referred to as Telnetting into the system. They are prompted to enter their username and password combination to access the remote computer, which enables the running of command lines as if logged into the computer in person.
+- Despite the physical location of users, their IP address will match the cumputer logged in to rather than the one physically used to connect.
+
+  ```
+  telnet sample.domain.edu
+  ```
+
+- Most Telnet implementation operates in one of the following three modes:
+  - Default mode: 
+    - If there is no other modes are invoked then this mode is used.
+    - Echoing is performed in this mode by client.
+    - In this mode, user types a character and client echoes the character on the screen but it does not send it until whole line is completed.
+  - Character mode:
+    - Each character typed in this mode is sent by client to server.
+    - Server in this type of mode is normally echoes character back to be displayed on the client's screen.
+  - Line mode:
+    - Line editing like echoing, character erasing... is done from the client side.
+    - Client will send the whole line to the server.
+
+### 6.3. Uses of Telnet
+
+- Telnet can be used for variety of activities on a server, including editing files, running various programs and checking mail.
+- Some servers enable remote connections using Telnet to access public data to play simple games or look up weather reports.
+- Telnet is not a secure protocol and is unencrypted.
+- Person's username, password and other private information that is typed over the Telnet session in plaintext.
+
+## 7. Secure Shell (SSH)
+
+- The SSH protocol is a method for secure remote login from one computer to another.
+- It provides serveral alternative options for strong authentication, and it protects the communications security and integrity with strong encryption.
+  
+### 7.1. How SSH works?
+
+- The SSH protocol works in the client-server model.
+- The SSH client drives the connection setup process and uses public key cryptography to verify the identity of the SSH server.
+- After the setup phase, the SSH protocol uses strong symmetric encryption and hashing algorithms to ensure the privacy and integrity of the data that is exchanged between the client and server.
+
+  ![12.png](img/12.png)
