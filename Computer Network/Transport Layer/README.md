@@ -188,3 +188,129 @@
 - Example: Suppose host A has received all bytes numbered 0 - 535 from B and another segment containing bytes 900-1,000. For some reason host A has not yet received bytes 536 - 899.
   -> Host A is still waiting for byte 536 in order to re-create B's data stream. -> A's next segment to B will contain 536 in the acknowledgment number field.
 - Because TCP only acknowledges bytes up to the first missing byte in the stream, TCP is said to provide **cumulative acknowledgments**.
+
+### 4.3. Reliable Data Transfer
+
+- TCP creates a reliable data transfer service on top of IP's unreliable best-effort service.
+- TCP's reliable data transfer service ensures that the data stream that process reads out of its TCP receive buffer is uncorrupted, without gaps, without duplication, and in sequence.
+
+#### 4.3.1. If channel has bit error, no packet loss
+
+![8.png](img/8.png)
+
+- Three additional protocols to handle the bit error:
+  - Error dectection: allows the receiver to detect when bit errors have occurred -> Checksum.
+  - Receiver feedback: simply sends positive (ACK - the packet is OK) and (NAK - the packet has error) acknowledgement packets back from the receiver to the sender.
+  - Retransmission: a packet that is received in error at the receiver will be retransmitted by the sender.
+
+#### 4.3.2. If channel has bit error and packet loss
+
+- Suppose that the sender transmits a data packet and either that packet, or the receiver's ACK of that packet, gets lost.
+- In either case, no reply is forthcoming at the sender from the receiver.
+- The sender will wait for a certain time (at least 1 Round-Trip Time (RTT)) and simply retransmit the data packet.
+- If the packet reaches the destination, but ACK/NAK is lost, duplication may occurs.
+  
+  -> Put a sequence number on each packet and receiver discards a duplicated packet.
+
+#### 4.3.3. Pipeline protocols
+
+![9.png](img/9.png)
+
+- Rather than operate in a stop-and-wait manner, the sender is allowed to send multiple packets without waiting for acknowledgements.
+- Pipelining has following consequences for reliable data transfer protocols:
+  - The range of sequence numbers must be increased, since each in-transmit packet must have a sequence number and there may be multiple unacknowledged packets.
+  - The sender and receiver sides of the protocols may have to buffer more than one packet. The sender will have to buffer packets that have been transmitted but not yet acknowledged.
+
+### 4.4. Flow control
+
+- When the TCP connecction receives bytes that are correct and in sequence, it places the data in the receive buffer. If the associated application process is relatively slow at reading the data from this buffer, the sender can very easily overflow the connection's receive buffer by sending too much data too quickly.
+- TCP provides a flow-control service to its applications to eliminate the possibility of the sender overflowing the receiver's buffer.
+- Flow control is a speed-matching service - matching the rate at which the sender is sending against the rate at which the receiving application is reading.
+- TCP flow control have a variable called the receive window. The receive window is used to give the sender an idea of how much free buffer space is available at the receiver.
+- TCP is full-duplex so that the sender at each side of the connection maintains a distinct receive window.
+
+![10.png](img/10.png)
+
+- The application process in receiving side reads from the buffer. Define the following variables:
+  - LastByteRead: the number of the last byte in the data stream erad from the buffer by the application process in the receiver.
+  - LastByteRcvd: the number of the last byte in the data stream that has arrived from the network and has been placed in the receive buffer at the receiver.
+- Since TCP is not permitted to overflow the allocated buffer, we must have:
+  
+  ```text
+  LastByteRcvd – LastByteRead < RcvBuffer
+  ```
+
+- The receive window, denoted *rwnd* is set to the amount of spare room in the buffer:
+  
+  ```text
+  rwnd = RcvBuffer – [LastByteRcvd – LastByteRead]
+  ```
+
+- The receiver tells the sender how much spare room it has in the connection buffer by placing its current value of rwnd in the receive window file of every segment. Initially, *rwnd* = *RcvBuffer*.
+- The sender keeps track of 2 variables *LastByteSent* and *LastByteAcked*. By keeping the amount of unacknowledged data less than the value of *rwnd*, the sender is assured that it is not overflowing the receive buffer at the receiver.
+  
+  ```text
+  LastByteSent – LastByteAcked < rwnd
+  ```
+
+### 4.5. Congestion control
+
+- Congestion occurs when there are too many senders and receivers, they send too much data so that the network cannot handle.
+- Consequence of congestion:
+  - Packet loss.
+  - Decrease of throughput and increase of delay.
+  
+  -> Everything gets worse.
+
+- TCP uses a congestion window and a congestion policy that avoid congestion.
+- Congestion policy in TCP:
+  - Slow start phase: starts slowly increment is exponential to threshold.
+  - Congestion avoidance phase: gradually increasing the rate to avoid congestion.
+  - Congestion detection phase: sender goes back to slow start phase or congestion avoidance phase.
+
+![11.png](img/11.png)
+
+#### 4.5.1. Slow start phase: exponential increment
+
+- Slow start begins with a initial value of *cwnd*, must be 2, 3 or 4 MSS.
+- The value for the congestion window size can be increased by 1 MSS with each acknowledgment received.
+- The transmission rate will be increased by the slow-start algorithm until either a packet loss is detected, or the receiver's advertised window (rwnd) is the limiting factor, or the slow start threshold (ssthresh) is reached.
+- If the *cwnd* reaches *ssthresh*, TCP changes to congestion avoidance algorithm. It should increased by up to 1 MSS for each RTT.
+
+  ```text
+  Initially cwnd = 1
+  After 1 RTT, cwnd = 2^(1) = 2
+  2 RTT, cwnd = 2^(2) = 4
+  3 RTT, cwnd = 2^(3) = 8
+  ```
+
+#### 4.5.2. Congestion avoidance phase: additive increment
+
+- This phase starts after the *cwnd* reached the threshold value (ssthresh). The size of *cwnd* then increases additively.
+- After each RTT, cwnd = cwnd + 1.
+  
+  ```text
+  Initially cwnd = i
+  After 1 RTT, cwnd = i+1
+  2 RTT, cwnd = i+2
+  3 RTT, cwnd = i+3
+  ```
+
+#### 4.5.3. Congestion dectection phase: multilicative decrement
+
+- If congestion occurs, the *cwnd* is decreased.
+- The only way a sender can guess that congestion has occurred is the need to retransmit a segment.
+- Retransmission can occur in one of 2 cases:
+  - Retransmission timer timeouts.
+  - Three same ACKs are received.
+
+  ![12.png](img/12.png)
+
+- When retransmission timer timeouts:
+  - TCP sets threshold to half of the current *cwnd* size.
+  - TCP sets *cwnd* to the size of one MSS (cwnd = 1).
+  - TCP starts the slow start phase.
+- When same three ACKs are arrived:
+  - TCP sets threshold to half of the current *cwnd* size.
+  - TCP sets *cwnd* to the value of the threshold.
+  - TCP starts the congestion avoidance phase.
