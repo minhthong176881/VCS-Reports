@@ -392,3 +392,42 @@ An application’s architecture is distinctly different from the network archite
 - After the setup phase, the SSH protocol uses strong symmetric encryption and hashing algorithms to ensure the privacy and integrity of the data that is exchanged between the client and server.
 
   ![12.png](img/12.png)
+
+- The form of command:
+  
+  ```text
+  ssh username@SSHserver
+  ```
+
+#### 7.1.1. Server (host) authentication
+
+![13.png](img/13.png)
+
+- The connection is established by an SSH client that intends to connect to an SSH server.
+- The server sends its public key to the client.
+- The server's public key is saved in the client's known hosts file.
+- The client and the server negotiate the connection parameters and establish connection.
+
+#### 7.1.2. Encryption and integrity
+
+- During the connection setup, the client and server negotiate and agree upon the symmetric encryption algorithm to be used for their communication and generate the encryption key to be used.
+- SSH protocol uses industry standard strong encryption algorithms, like AES, to secure the communication between the involved parties.
+- In addition, the protocol uses hashing algorithms, such as SHA-2, to ensure the integrity of the data transmitted.
+
+#### 7.1.3. Client (user) authentication
+
+- SSH protocol enables client authentication using traditional passwords or public key authentication. However, given the risks and inefficiencies of using passwords, public key authentication is more widely used.
+- The client generates a public-private key pair with an SSH client (OpenSSH...) using the ssh-keygen command.
+- Once created, the user places their authorized key (public key) into the authorized_keys file on the server they need to connect to.
+- When the user remotely logs in using key-based authentication, the OpenSSH server looks for authorized key, and the user authenticates to the server with its coresponding private key.
+
+### 7.2. Common use cases for SSH protocol
+
+- SSH conenctions have mostly used to secure different types of communications between a local machine and a remote host:
+  - Secure remote access to resources.
+  - Remote execution of commands.
+  - Delivery of software patches and updates.
+  - Interactive and automated file transfers.
+- SSH is used for managing critical infrastructure such as routers, server hardware, virtualization platforms, and operating systems.
+- SSH keys are used to automate access to servers and often are used in scripts, backup systems and configuration management tools.
+- SSH keys provide single sign-on (SSO) capabilities allowing users to move between their accounts without typing a password each time.
