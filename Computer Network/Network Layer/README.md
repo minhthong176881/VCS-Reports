@@ -169,6 +169,42 @@
 
 - Output port processing takes packets that have been stored in the output port's memory and transmits them over the output link, includes selecting and de-queueing packets for transmission and performing the needed link-layer and physical-layer transmission functions.
 
-### 3.5. The Routing Control Plane
+### 3.4. The Routing Control Plane
 
 - The network-wide routing control plane is decentralized - with different pieces (e.g. of a routing algorithm) executing at different routers and interacting by sending control messages to each other.
+
+## 4. The Internet Protocol (IP)
+
+![8.png](img/8.png)
+
+The components of the Internet's network layer:
+
+- The IP protocol.
+- The routing component: determines the path a datagram follows from source to destination, computes the forwarding tables that are used to forward packets through the network.
+- The Internet Control Message Protocol (ICMP): reports errors in datagrams and respond to requests from certain netwok-layer information.
+
+## 4.1. Datagram Format
+
+![9.png](img/9.png)
+
+IPv4 datagram format is shown in the diagram above:
+
+- Version number: these 4 bits specify the IP protocol version of the datagram (IP, IPv4, IPv6). The router can determine how to interpret the remainder of the IP datagram by looking at the version number.
+- Header length: Since an IPv4 datagram can contain a variable number of options, these 4 bts are needed to determine where in the IP datagram the data actually begins. Most IP datagrams do not contain options, so the typical IP datagram has a 20-byte header.
+- Type of service: the type of service (TOS) bits were included in the IPv4 header to allow different types of IP datagrams to be distinguished from each other.
+- Datagram length: this is the total length of the IP datagram (header + data). Since this field is 16 bits long, the theoretical maximum size of the IP datagram is 65,535 bytes. However, datagrams are rarely larger than 1,500 bytes.
+- Idenfifier, loags, fragmentatin offset: these field have to do with IP fragementation. The new IPv6 does not allow for fragmentation at routers.
+- Time-to-live: the TTL field is included to ensure that datagrams do not circulate forever in the network. This field is decremented by one each time the datagram is processed by a router. If the TTL field reaches 0, the datagram must be dropped.
+- Protocol: this field is used only when an IP datagram reaches its final destination. The value of this field indicates the specific transport-layer protocol to which the data portion of this IP datagram should be passed.
+  - For example, a value of 6 indicates that the data porion is passed to TCP, while a value of 17 indicates that data is passed to UDP.
+  - The protocol number in the IP datagram has a role that is similar to the role of the port number field in the transport-layer segment.
+  - The protocol number is the glue that binds the network and transport layers together.
+- Header checksum: the header checksum helps a router in detecting bit errors in a received IP datagram.
+  - A router computes the header checksum for each received IP datagram and detects an error condition if the chacksum carried in the datagram header does not equal the computed checksum.
+  - Routers typically discard datagrams for which an error has been decteced.
+  - TCP/IP perform error checking at both the transport and network layers for serveral reasons:
+    - Only the IP header is checksummed at the IP layer, while the TCP/UDP checksum is computed over the entire TCP/UDP segment.
+    - TCP/UDP and IP do not neccessarily both have to belong to the same protocol stack.
+- Source and destination IP addresses: when a source creates a datagram, it inserts its IP address into the source Ip address field and inserts the address of the destination into the destination IP address field. Often the source host determines the destination addres via a DNS lookup.
+- Options: the options fields allow an IP header to be extended. Header options were rarely used in order to save overhead in every datagram header.
+- Data (payload): the data field of the IP datagram contains the transport-layer segment (TCP or UDP) to be delivered to the destination. However, the data field can carry other types of data, such as ICPM messages.
