@@ -208,3 +208,167 @@ IPv4 datagram format is shown in the diagram above:
 - Source and destination IP addresses: when a source creates a datagram, it inserts its IP address into the source Ip address field and inserts the address of the destination into the destination IP address field. Often the source host determines the destination addres via a DNS lookup.
 - Options: the options fields allow an IP header to be extended. Header options were rarely used in order to save overhead in every datagram header.
 - Data (payload): the data field of the IP datagram contains the transport-layer segment (TCP or UDP) to be delivered to the destination. However, the data field can carry other types of data, such as ICPM messages.
+
+## 4.2. IPv4
+
+- A host has only a single link into the network; when IP in the host wants to send a datagram, it does so over this link.
+- The boundary between the host and the physical link is called an interface.
+- A router has 2 or more links to connect, since it need one link for receive a datagram and some other link to forward the datagram.
+- The boundary between router and any one of its links is also called an interface.
+- Because every host and router is capable of sending and receiving IP datagrams, IP requires each host and router interface to have its own IP address.
+
+  -> An IP address is technically associated with an interface, rather than with the host or router containing that interface.
+
+- Each IP address is 32 bits (4 bytes) long -> there are a total of 2^32 possible IP addresses.
+- These addresses are written in **dotted-decimal notation**, in which each byte of the address is written in its decimal form and is separated by a period (dot). For example: 193.32.216.9 and the address in binary notation is 11000001 00100000 11011000 00001001.
+- IP address is globally unique.
+- A portion of an interface's IP address will be determined by the subnet to which it is connected.
+  
+  ![10.png](img/10.png)
+
+- In the figure above, the network interconnecting three host interfaces and ont router interface forms a **subnet** (a subnet is also called an *IP network* or simply a *network*).
+- IP addressing assigns an address to this subnet: 223.1.1.0/24, where /24 anotation, sometimes known as a **subnet mask**, indicates that the leftmost 24 bits of the 32-bit quantity define the subnet address.
+- Any addition hosts attached to the 223.1.1.0/24 subnet would be required to have an address of the form 223.1.1.xxx.
+- The Internet's address assignment strategy is known as **Classless Interdomain Routing (CIDR)**.
+- CIDR generalizes the notion of subnet addressing. As with subnet addressing, the 32-bit IP address is divided into two parts and again has the dotted-decimal form *a.b.c.d/x*, where *x* indicates the number of bits in the first part of the address.
+  - The x most significant bits of an address indicate the netwrok portion of the IP address, and are often referred to as the **prefix** (or network prefix) of the address.
+  - An organization is assigned a block of contiguous addresses (a range of addresses with a common prefix). The IP addresses of devices within the organization will share the common prefix. When a router outside the organization forwards a datagram whose destination address is inside the organization, only the leading x bits of the address need to be considered.
+
+    -> Reduce size of the forwarding table in these routers.
+
+  - The remaining 32 - x bits of an address can be thought of as distinguishing among the devices within the organization, all of which have the same network prefix.
+
+- **Classful addressing**: the network portions of an IP address were contrained to be 8, 16 or 24 bits in length, subnets with 8-, 16- and 24- bit subnet addresses were known as class A, B and C networks.
+
+  ![11.png](img/11.png)
+
+  -> Problem: a class C (/24) subnet could accommodate only upto 256 hosts - too small for many organizations. However, a class B (/16) subnet supports upto 65634 hosts - too large. -> wasteful.
+
+## 4.3. Internet Control Message Protocol (ICMP)
+
+- ICMP is used by hosts and routers to communicate network-layer information to each other. The most use of ICMP is for error reporting.
+- ICMP is often considered part of IP but architectureally it lies just above IP, as ICMP messages are carried inside IP datagrams (ICMP messages are carried as IP payload). Similarly, when a host recives an IP datagram with ICMP specified as the upper-layer protocol, it demultiplexes the datagram's contents to ICMP, just as it would demultiplex a datagram's content to TCP or UDP.
+- ICMP messages have a type and a code field, and contain the header and the first 8 bytes of the IP datagram that caused the error.
+
+  ICMP Type | Code | Description
+  --- | --- | ---
+  0 | 0 | echo reply (to ping)
+  3 | 0 | destination network unreachable
+  3 | 1 | destination host unreachable
+  3 | 2 | destination protocol unreachable
+  3 | 3 | destination port unreachable
+  3 | 6 | destination network unknown
+  3 | 7 | destination host unknown
+  4 | 0 | source quench (congestion control)
+  8 | 0 | echo request
+  9 | 0 | router advertisement
+  10 | 0 | router discovery
+  11 | 0 | TTL expired
+  12 | 0 | IP header bad
+
+- Traceroute: allows to trace a route from a host to any other host in the world. Traceroute is implemented with ICMP messages.
+- Traceroute in the source sends a series of ordinary IP datagrams to the destination. Each of these datagrams carries a UDP segment with an unlikely UDP port number.
+  - The first of these datagrams has a TTL of 1, the second of 2, and so on.
+  - The source starts timers for each of the datagram.
+  - When the *n*th datagram arrives at the *n*th router, the *n*th router observes that the TTL of the datagram has just expired, the router discards the datagram and sends an ICMP warning message to the source (type 11 code 0).
+  - This warning message includes the name of the router and its IP address.
+  - When this ICMP message arrives back at the source, the source obtains the RTT from the timmer and the name and IP address of the *n*th router from the ICMP message.
+- One packet eventually arrives at the destination host. Since this datagram contains a UDP segment with an unlikely port number, the destination host sends a port unreachable ICMP message (type 3 code 3) back to the source.
+  - When the source host receives this particular ICMP message, it knows it does not need to send additional probe packets. (The standart Traceroute program actually sends sets of 3 packets with the same TTL; thus the Traceroute output provides 3 resuls for each TTL).
+
+    -> The source host learns the number and the identities of routers that lie between it and the destination host and RTT between the 2 hosts.
+
+## 5. IPTables and Netfilter
+
+- The basic firewall software most commonly used in Linux is called iptables.
+- The iptables firewall works by interacting with the packet filtering hooks in the Linux kernel's networking stack. These kernel hooks are known as the netfilter framework.
+- Every packet that enters networking system (incoming or outgoing) will trigger these hooks.
+
+### 5.1. Netfilter hooks
+
+- As packets progress through the stack, they will trigger the kernel modules that have registered with these hooks. The hook that a packet will trigger depends on whether the packet is incoming or outgoing, the packet's destination, and whether the packet was dropped or rejected at a previous point.
+- There are five netfilter hooks:
+  - `NF_IP_PRE_ROUTING`: this hook will be triggered by any incoming traffic very soon after entering the network stack. This hook is processed before any routing decisions have been made regarding where to send the packet.
+  - `NF_IP_LOCAL_IN`: this hook is triggered after an incoming packet has been routed if the packet is destined for the local system.
+  - `NF_IP_FORWARD`: this hook is triggered after an incoming pakcet has been routed if the packet is to be forwarded to another host.
+  - `NF_IP_LOCAL_OUT`: this hook is triggered by any locally created outbound traffic as soon as it hits the network stack.
+  - `NF_IP_POST_ROUTING`: this hook is triggered by any outgoing or forwarded traffic after routing has taken place and just before being put out on the wire.
+- Kernel modules that wish to register at these hooks must provide a priority number to help determine the order in which they will be caled when the hook is triggered.
+- Each module will be called in turn and will return a decision to netfilter after processing that indicates what should be done with the packet.
+
+### 5.2. IPTables
+
+- The iptables firewall uses tables to organze its rules. These tables classify rules according to the type of decisions they are used to make. For example, if a rule deals with network address translation, it will be put into the *nat* table. If the rule is used to decide whether to allow the packet to continue to its destination, it would be added to the *filter* table.
+- Within each iptables table, rules are organized within separate *chains*.
+- The built-in chains represent the netfilter hooks which trigger them (the chains basically determine when the rules will be evaluated).
+- The name of the built-in chains mirror the names of the netfilter hooks they are associated with:
+  - `PREROUTING`: triggered by the `NF_IP_PRE_ROUTING` hook.
+  - `INPUT`: triggered by the `NF_IP_LOCAL_IN` hook.
+  - `FORWARD`: triggered by the `NF_IP_FORWARD` hook.
+  - `OUTPUT`: triggered by the `NF_IP_LOCAL_OUT` hook.
+  - `POSTROUTING`: triggered by the `NF_IP_POST_ROUTING` hook.
+- There are only 5 netfilter kernel hooks, so chains from multiple tables are registered at each of the hooks.
+  - For example, 3 tables have PREROUTING chains. When these chains register at the associated NF_IP_PRE_ROUTING hook, they specify a priority that dictates what order each table's PREROUTING chain is called.
+  - Each of the rules inside the highest priority PREROUTING chain is evaluated sequentially before moving onto the next PREROUTING chain.
+
+#### 5.2.1. IPTables tables
+
+- The filter table:
+  - The filter table is one of the most widely used tables in iptables. 
+  - The filter table is used to make decisions about whether to let a packet continue to its intended destination or to deny its request (filtering packets).
+- The NAT table:
+  - The nat table is used to implement network address translation rules.
+  - As packets enter the network stack, rules in this table will determine whether and how to modify the packet's source or destination addresses in order to impact the way that the packet and any response traffic are routed.
+  - This is often used to route packets to networks when direct access is not possible.
+- The mangle table:
+  - The mangle table is used to alter the IP headers of the packet in various ways, such as changing TTL values.
+  - This table can also place an internal kernel mark on the packet for further processing in other tables and by other networking tools. This mark does not touch the actual packet, but adds the mark to the kernel's representation of the packet.
+- The raw table:
+  - The iptables firewall is stateful, meaning that packets are evaluated in regards to their relation to previous packets (for example, a packet could be part of a new connection, or it could be part of an existing connection).
+  - The raw table allows to work with packets before the kernel starts tracking its state.
+- The security table:
+  - The security table is used to set internal SELinux security context marks on packets, which will affect how SELinux or other systems that can interpret SELinux security contexts handle the packets.
+  - These marks can be applied on a per-packet or per-connection basis.
+
+#### 5.2.2. IPTables Chains
+
+- The chains that available within each iptables table:
+  
+  ![12.png](img/12.png)
+
+  - The nat table has been split between DNAT operations (alter the destination adderss of a packet) and SNAT operations (alter the source address).
+
+- Chain traversal order:
+  - Incoming packets destined for the local system: PREROUTING -> INPUT
+  - Incoming packets destined to another host: PREROUTING -> FORWARD -> POSTROUTING
+  - Locally generated packets: OUTPUT -> POSTROUTING
+  
+#### 5.2.3. IPTables Rules
+
+- Rules are placed within a specific chain of a specific table.
+- Each rule has a matching component and an action component.
+- Matching:
+  - The matching portion of a rule specifies the criteria that a packet must meet in order for the associated action to be executed.
+  - The matching system is flexible and can be expanded with iptables extensions available on the system.
+  - Rules can be contructed to match by protocol type, destination or source address, destination or source port, destination or source network, input or output interface, headers, or connection state among other criteria. These can be combined to create fairly complex rule sets to distinguish between different traffic.
+- Targets:
+  - A target is the action that are triggered when a packet meets the matching criteria of a rule.
+  - Target are divided into 2 categories:
+    - Terminating targets: perform an action which terminates evaluation within the chain and returns control to the netfilter hook. Depending on the return value provided, the hook might drop the packet or allow the packet to continue to the next stage of processing.
+    - Non-terminating targets: perform an action and continue evaluation within the chain. Although each chain must eventually pass back a final terminating decision, any number of non-terminating targets can be executed beforehand.
+
+#### 5.2.4. Connection Tracking
+
+- Connection tracking allows iptables to make decisions about packets viewed in the context of an ongoing connection.
+- The connection tracking system provides iptables with the functionality it needs to perform "stateful" operations.
+- Connection tracking is applied very soon after packets enter the network stack.
+- The system checks each packet against a set of existing connections. It will update the state of the connection in its store if needed and will add new connections to the system when neccessary.
+- Packets that have been marked with the NOTRACK target in one of the raw chains will bypass the connection tracking routines.
+- Available states:
+  - NEW: When a packet arrives that is not associated with an existing connection, but is not invalid as a first packet, a new connection will be added to the system with this label.
+  - ESTABLISHED: a connection is changed from NEW to ESTABLISHED when it receives a valid response in the opposite direction. For TCP connections, this means a SYN/ACK and for UDP and ICMP traffic, this means a response where source and destination of the original packet are switched.
+  - RELATED: pakcets that are not part of an existing connection, but are associated with a connection already in the system are labeled RELATED.
+  - INVALID: packets can be marked INVALID if they are not associated with an existing connection and aren't appropriate for opening a new connection, if they cannot be identified, or if they aren;t routable among other reasons.
+  - UNTRACKED: packets can be marked as UNTRACKED if they've been targeted in a raw table chain to bypass tracking.
+  - SNAT: a virtual state set when the source address has been altered by NAT operations. This is used by the connection tracking system so that is knows to change the source addresses back in reply packets.
+  - DNAT: a virtual state set when the destination address has been altered by NAT operations. This is used by the connection tracking system so that it knows to change the destination address back in reply packets.
