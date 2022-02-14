@@ -76,6 +76,7 @@ An application’s architecture is distinctly different from the network archite
   - The client acknowledges and sends the HTTP request message into the TCP connection back to the server -> take 1 RTT.
 
     -> The total response time is 2 RTTs + transmission time at the server of the HTML file.
+    
 ![2.png](img/2.png)
 
 - Shortcomings:
@@ -105,6 +106,7 @@ An application’s architecture is distinctly different from the network archite
     - PUT: uploads file in entity body to path specified in URL field.
     - DELETE: deletes file specified in the URL field.
 - General format of an HTTP request message:
+
 ![4.png](img/4.png)
 
 - Example:
