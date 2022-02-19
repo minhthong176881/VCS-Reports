@@ -118,4 +118,82 @@
     - Drawback:
       - A node is limited to an average rate of R/N bps even when it is the only node with packets to send/
       - A node must always wait for its turn in the transmission sequence.
-  - Frequency-division multiplexing (FDM):  divides the R bps channel into different frequencies (each with a bandwidth of R/N) and assigns each frequency to one of the N nodes.
+  - Frequency-division multiplexing (FDM):  divides the R bps channel into different frequencies (each with a bandwidth of R/N) and assigns each frequency to one of the N nodes -> FDM creates N smaller channels of R/N bps out of the single, the larger R bps channel.
+    - FDM shares both the advantages and drawbacks of TDM.
+    - FDM avoids collisions and divides the bandwidth fairly among the N nodes. However, a node is limited to a bandwidth of R/N, even when it is the only node with packets to send.
+
+- Code division multiple access (CDMA): assigns a different code to each node.
+  - Each node uses its unique code to encode the data bits it sends.
+  - Different nodes can transmit simultaneously and have their respective receivers correctly receive a sender's endcoded data bits (assuming the receiver knows the sender's code).
+  - CDMA has been used in military systems and now has widespread civilian use, particularly in cellular telephony.
+
+- Carrier sense multiple access (CSMA):
+  - Rules of CSMA and CSMA with collision detection (CSMA/CD):
+    - Listen before speaking: a node listens to the channel before transmitting - this is called **carried sensing**. If a fram from another node is currently being transmitted into the channel, a node then waits until it detects no trasmissions for a short amout of time and then begins transmission.
+    - If someone els begins talking at the same time, stop talking: a transmitting node listens to the channel while it is trasmitting. If it detects than another node is transmitting an interfering frame, it stops transmitting and waits a random amount of time before repeating the sense-and-transmit-when-idle cycle.
+  - There are still collisions because of channel propagation delay - the time it takes for a signal to propagate from one of the nodes to another. The longer this propagation delay, the larger the chance that a carrier-sensing node is not yet able to sense a trasmission that has already begun at another node in the network.
+
+### 3.2. Random Access protocols
+
+- The second broad class of multiple access protocols are random access protocols.
+- In a random access protocol, a transmitting node always tranmits at the full rate of the channel R bps.
+- When there is a collision, each node involved in the collision repeatedly retransmits its frame until its frame gets through without a collision.
+  - The node doesn't nessessarily retransmit righ away. Instead it waits a random delay before retrasmitting the frame.
+  - Each node chooses independent random delays -> it is possible that one of the nodes will be able to sneak its frame into the channel without a collision.
+- Pros & cons:
+  - Efficient at low load: 1 node can fully use the channel.
+  - At high load: too many collisions.
+
+## 4. Switched Local Area Networks
+
+![7.png](img/7.png)
+
+### 4.1. Link-layer Addressing and ARP
+
+#### 4.1.1. MAC Addresses
+
+- It is not hosts and routers that have link-layer address but rather their addapters (network interface) that have the link-layer address.
+- A host or router with multiple network interfaces will have multiple link-layer addresses associated with it.
+- However, link-layer switches do not have link-layer addresses because the job of link-layer swiches is to carry datagrams between host and router (this job is transparent).
+- A link-layer address is called a LAN address, physical address, or a MAC address.
+
+  ![8.png](img/8.png)
+
+- For most LANs, the MAC address is a 6 bytes long, giving 2^48 possible MAC addresses.
+- These 6-byte addersses are expressed in hexadecimal notaion, with each byte of the address expressed as pair of hexadecimal numbers.
+- MAC address is unique. IEEE manages the MAC address space.
+  - When a company want to manufacture adapters, it purchases a chunk of the address space consisting of 2^24 addresses for a nominal fee.
+  - IEEE locates the chunk of 2^24 addresses by fixing the first 24 bits of a MAC address and letting the company create unique combinations of the last 24 bits for each adapter.
+- An adapter's MAC address has a flat structure and doesn't change no matter where the adapter goes. In contrast, IP addresses have a hierachical structure (that is, a network part and a host part), and a host's IP addresses needs to be changed when the host moves, i.e, changes the network to which it is attached.
+- When an adapter wants to send a frame to some destination adapter, the sending adapter inserts the destination adapter's MAC address into the frame and then sends the frame into the LAN.
+  - A switch occassionally broadcast an incoming frame onto all of its interfaces.
+  - An adapter may receive a frame that isn't addressed to it -> check to see whether the destination MAC address in the frame matches its own MAC address.
+    - If there is a match, the  adapter extracts the enclosed datagram and passes the datagram up the protocol stack.
+    - If there isn't a match, the adapter discards the frame.
+  - If a sending adapter does want all the other adapters on the LAN receive the frame, it insert a special MAC broadcass address (FF-FF-FF-FF-FF-FF) into the destination address field of the frame.
+
+#### 4.1.2. Address Resolution Protocol (ARP)
+
+- ARP is used to tanslate between network-layer addresses (e.g. IP addresses) and link-layer addresses (MAC addresses).
+- An ARP module in the sending host takes any IP address on the same LAN as input, and returns the corresponding MAC address.
+  
+  -> ARP resolves IP addresses only for host and router interfaces on the same subnet.
+
+- How ARP works?
+  - Each host and router has an ARP table in its memory, which contains mappings of IP addresses to MAC addresses.
+
+  ![9.png](img/9.png)
+
+  - The ARP tale also contains a time-to-live (TTL) value, which indicates when each mapping will be deleted from the table.
+    - A table does not neccessarily contain an entry for every host and router on the subnet; some may have never been enter into the table, and others may have expired.
+    - A typical expiration time for an entry is 20 minutes from when an entry is placed in an ARP table.
+  - First, the sender construct a special packet called an ARP packet (includes serveral fields: the sending and receiving IP and MAC addresses, both ARP query and response packets have the same format).
+  - The sender passes an ARP query packet to the adater along with an indicatin that the adapter should send the packet to the MAC broadcast address - FF-FF-FF-FF-FF-FF.
+  - The adapter encapsulates the ARP packet in a link-layer frame, uses the broadcast address for the frame's destination address, and transmits the frame into the subnet.
+  - The frame containing the ARP query is received by all the other adapters on the subnet and each adapter passes the ARP packet within the frame up to its ARP module.
+  - Each of these ARP modules checks to see if its IP address matches the destination IP address in the ARP packet.
+  - The One with a match sends back to the querying host a response ARP packet with the desired mapping.
+  - The querying host can then update its ARP table and send its IP datagram, encapsulated in a link-layer frame whose destination MAC is that of the host or router responding to the earlier ARP query.
+
+### 4.2. Ethernet
+
