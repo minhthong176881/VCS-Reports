@@ -152,7 +152,7 @@
 
 #### 4.1.1. MAC Addresses
 
-- It is not hosts and routers that have link-layer address but rather their addapters (network interface) that have the link-layer address.
+- It is not hosts and routers that have link-layer address but rather their adapters (network interface) that have the link-layer address.
 - A host or router with multiple network interfaces will have multiple link-layer addresses associated with it.
 - However, link-layer switches do not have link-layer addresses because the job of link-layer swiches is to carry datagrams between host and router (this job is transparent).
 - A link-layer address is called a LAN address, physical address, or a MAC address.
@@ -197,3 +197,118 @@
 
 ### 4.2. Ethernet
 
+- The original Ethernet LAN was invented in the mid-1970s.
+- The original Ethernet LAN used a coaxial bus to interconnect the nodes.
+  - Ethernet with a bus topology is a broadcast LAN - all transmitted frames travel to and are processed by all adapters connected to the bus.
+- By the late 1990s, most companies and universities had replaced their LANs with Ethernet installations using a hub-based star topology.
+  - The host (and routers) are directly connected to a hub with twisted-pair copper wire.
+  - A **hub** is a physical-layer device that acts on individual bits rather than frames. When a bit arrives from one interface, the hub simply re-creates the bit, boosts its energy strength, and transmits the bit onto all other interfaces.
+
+    -> Hub-based star topology is also a broadcast LAN.
+
+  - If a hub receives frames from 2 different interfaces at the same time, a collision occurs and the nodes that created the frames must retransmit.
+- In the early 2000s, Ethernet installations continued to use a star topology, but the hub at the center was replaced with a **switch**.
+
+***Ethernet Frame Structure***
+
+![10.png](img/10.png)
+
+- Six fields of the Ethernet frame:
+  - Data field (46 to 1,500 bytes): carries the IP datagram.
+    - The maximum transmission unit (MTU) of Ethernet is 1,500 bytes -> if the IP datagram exceeds 1,500 bytes, the host hast to fragment the datagram.
+    - The minimum size of the data field is 46 bytes -> if the IP datagram is less than 46 bytes, the data field has to be "stuffed" to fill it out to 46 bytes. The network layer uses the length field in the IP datagram header to remove the stuffing.
+  - Destination address (6 bytes): contains the MAC address of the destination adapter. When an adapter receives an Ethernet frame, it passes the contents of the data field to the network layer if the destination MAC address matches its own address or is the MAC broadcast address; else it discards the frame.
+  - Source address (6 bytes): contains the MAC address of the adapter that transmits the frame onto the LAN.
+  - Type field (2 bytes): permits Ethernet to multiplex network-layer protocols. A given host may support multiple network-layer protocols using different protocols for different application -> when the Ethernet frame arrives, the adapter needs to know to which network-layer protocol it should pass (demultiplex) the contents of the data field.
+  - Cyclic redundancy check (CRC) (4 bytes): allows the receiving adapter to detect bit errors in the frame.
+  - Preamble (8 bytes): each of the first 7 bytes has a value of 10101010; the last byte is 10101011.
+    - The first 7 bytes serve to "wake up" the receiving adapter and synchronize their clocks to that of the sender's clock.
+    - The last 2 bits of the last byte alert adapter B that the "important stuff" is about to come.
+- All of the Ethernet technologies provide connectionless service to the network layer.
+  - When an adapter receives a frame, it runs the frame through a CRC check . When a frame fails the CRC check, the adapter discards the frame.
+    - If the application is using UDP, the application in receiving host will see gaps in the data.
+    - If the application is using TCP, TCP in receiving host will not acknowledge the data contained in discarded frames, causing TCP in sending host to retransmit.
+
+### 4.3. Link-layer Switches
+
+- The role of the switch is to receive incoming link-layer frames and forward them onto outgoing links.
+- Switch itself is **transparent** to the hosts and routers in the subnet; that is, a host/router addresses a frame to another host/router (rather than addressing the frame to the switch).
+
+#### 4.3.1. Forwarding and Filtering
+
+- Filtering is the switch function that determines whether a frame should be forwarded to some interface or should just be dropped.
+- Forwarding is the switch function that determines the interfaces to which a frame should be directed, and then movese the frame to those interfaces.
+- Switch filtering and forwarding are done with a **switch table** (contains entries for some of the hosts and routers on a LAN). An entry in the switch table contains a MAC address, the switch interface that leads toward that MAC address, and the time at which the entry was placed in the table.
+- Suppose a frame with destination address DD-DD-DD-DD-DD-DD-DD arrives at the switch on interface x. The switch indexes its table with the MAC address DD-DD-DD-DD-DD-DD-DD. There are 3 possible cases:
+  - There is no entry in the table for the MAC address. In this case, the switch broadcasts the frame.
+  - There is an entry in the table, associating DD-DD-DD-DD-DD-DD-DD with interface x. In this case, the frame is coming from a LAN segment that contains adapter DD-DD-DD-DD-DD-DD-DD. The switch performs the filtering function by discarding the frame.
+  - There is an entry in the table, associating DD-DD-DD-DD-DD-DD-DD with interface y != x. In this case, the switch perform its forwarding function by putting the frame in an output buffer that precedes interface y.
+
+#### 4.3.2. Self-learning
+
+- A switch's table is built automatically, dynamically, and autonomously - without any intervention from a network administrator or from a configuration protocol -> swiches are **self-learning**.
+  - The switch table iss initially empty.
+  - For each incoming frame received on an interface, the switch stores in its table the MAC address in the frame's source address field, the interface from which the frame arrived, and the current time.
+  - The switch deletes an address in the table if no frames are received with that address as the source address after some period of time (if a PC is replaced by another PC, the MAC address of the original PC will be purged from the switch table).
+
+#### 4.3.3. Properties of Link-layer Switching
+
+- Advantages of using switches, rather than broadcast links such as buses or hub-based star topologies:
+  - Elimination of collisions: In a LAN built from switches (without hubs), there is no wasted bandwidth due to collisions.
+    - The switches buffer frames and never transmit more than one frame on a segment at any one time.
+    - The maximum aggregate throughput of a switch is the sum of the switch interface rates -> switches provide a significant performance improvement over LANs with broadcast links.
+  - Heterogeneous links: Because a switch isolates one link from another, the different links in the LAN can operate at different spees and can run over different media.
+  - Management: if an adapter malfunctions and continually sends Ethernet frames, a switch can detect the problem and internally disconnect the malfunctioning adapter. Similarly, a cable cut desconnects only that host that was using the cu cable to connect to the switch. Switches also gather statistics on bandwidth usage, collision rates, and traffic types, and make this information available to the network manager. This information can be used to debug and correct problems, and to plan how the LAN should evolve in the future.
+
+#### 4.3.4. Switches vs Routers
+
+![11.png](img/11.png)
+
+- Pros and cons of switches:
+  - Switches are plug-and-play.
+  - Switches can also have relatively high filtering and forwarding rates since switches have to process frames only up through layer 2.
+  - To prevent the cycling of broadcast frames, the active topology of a switched network is restricted to a spanning tree. Also, a large switched network would require large ARP tables in the hosts and routers and would generate substantial ARP traffice and proccessing.
+  - Switches are susceptible to broadcast storms (if one host transmits an endless stream of Ethernet broadcast frames, the switches will forward all of these frames, causing the entire network to collapse).
+- Pros and cons of routers:
+  - Since network addressing is often hierarchical, packets do not normally cycle through routers even when the network has redundant paths. Thus, packets are not restricted to a spanning tree and can use the best path between source and destination.
+  - Since routers do not have the spannign tree restriction, they have allowed the Internet to be built with a rich topology that inclues, for example, multiple active links between Europe and North America.
+  - Routers provide firewall protection against layer-2 broadcast storms.
+  - Drawback:
+    - Routers are not plug-and-play, they and the hosts need their IP addresses to be configured.
+    - Router often have a larger processing time per packet than switches, because they have to process up through the layer-3 fields.
+  
+- Switches suffice for small networks consisting of a few hundred hosts have a few LAN segments, as they localize traffic and increase aggregate throughput without requiring any configuration of IP addresses.
+- Larger networks consisting of thousands of hosts typically include routers within the network. The routers provide a more robust isolation of traffic, control broadcast storms, and use more intelligent routes among the hosts in the network.
+
+## 5. Ebtables
+
+- Ebtables is an application program used to set up and maintain the tables of rules (inside the Linux kernel) that inspect Ethernet frames.
+- It is analogous to the **iptables** application, but less complicated, due to the fact that the Ethernet protocol is much simpler than the IP protocol.
+
+### 5.1. Chains
+
+- There are 3 ebtables tables with built-in chains in the Linux kernel. These table are used to divide functionality into different set of rules.
+- Each set of rules is called a chain. Each chain is an ordered list of rules that can match Ethernet frames.
+- If a rule matches an Ethernet frame, then a processing specification tells what to do with that matching frame. The processing specification is called a **target**.
+- If the frame does not match the current rule in the chain, then the next rule in the chain is examined and so forth.
+- The user can create new chains (user-defined chain) that can be used as the 'target' of a rule.
+
+
+### 5.2. Targets
+
+- When a frame matches a rule, then the next action performed by the kernel is specified by the target.
+- The target can be one of these values:
+  - ACCEPT: let the frame through.
+  - DROP: the frame has to be dropped.
+  - CONTINUE: the next rule has to be checked.
+  - RETURN: stop traversing this chain and resume at the next rule in the pervious chain.
+  - Or a jump to a user-defined chain.
+
+### 5.3. Tables
+
+- There are 3 ebtables tables in the Linux kernel:
+  - Filter table: is the default table that the command operates on and contains 3 built-in chains: INPUT, OUTPUT, and FORWARD.
+  - Nat table: is mostly used to change the MAC addresses and contains 3 built-in chains: PREROUTING, OUTPUT, and POSTROUTING.
+  - Broute table: is used to make a brouter, it has 1 built-in chain: BROUTING. The target DROP and ACCEPT have a special meaning in the broute table.
+    - DROP actually means the frame has to be routed.
+    - ACCEPT means the frame has to be bridged.
