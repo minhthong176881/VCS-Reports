@@ -171,7 +171,7 @@
     - Setting the PSH bit indicates that the receiver should pass the data to the upper layer immediately.
     - The URG bit is used to indicate that there is data in this segment that the sending-side upper-layer entity has marked as "urgent". The location of the last byte of this urgent data is indicated by the 16-bit urgent data pointer field.
 
-**Sequence numbers and Acknowledgment numbres**
+***Sequence numbers and Acknowledgment numbres***
 
 - TCP views data as an unstructured, but ordered, stream of bytes.
 - TCP's use of sequence numbers reflects this view in that sequence numbers are over the stream of transmitted bytes and not over the series of transmitted segments.
@@ -314,3 +314,71 @@
   - TCP sets threshold to half of the current *cwnd* size.
   - TCP sets *cwnd* to the value of the threshold.
   - TCP starts the congestion avoidance phase.
+
+## 5. Securing TCP connections: SSL/TLS
+
+- Cryptography can enhance TCP with security services, including confidentiality, data integrity, and end-point authentication. This enhanced version of TCP is known as **Secure Sockets Layer (SSL)**. A slightly modified version of SSL version 3 is **Transport Layer Security (TLS)**.
+- SSL is often used to provide security to transactions that take place over HTTP.
+- However, because SSL secures TCP, it can be employed by any application that runs over TCP.
+- SSL provides a simple Application Programmer Interface (API) with sockets, which is similar to TCP's API.
+  
+  ![13.png](img/13.png)
+
+- Although SSL techinically resides in the application layer, from the developer's perspective it is a transport protocol that provides TCP's services enhanced with security services.
+- SSL has 3 phases: handshake, key derivation, and data transfer.
+
+### 5.1. Handshake
+
+- During the handshake phase, Bob needs to:
+  - Establish a TCP connection with Alice.
+  - Verify that Alice is really Alice.
+  - Send Alice a master secret key, which will be used by both Alice and Bob to generate all the symmetric keys they need for the SSL session.
+
+  ![14.png](img/14.png)
+
+  - SSL allow Alice and Bob to agree on the cryptographic algorithms at the begining of the SSL session, during the handshake phase.
+  - Alice and Bob send nonces(*) to each other, which are used in the creation of the session keys.
+    - The client sends a list of cryptographic algorithms it supports, along with a client nonce.
+    - From the list, the server chooses a symmetric algorithm (e.g. AES), a public key algorithm (e.g. RSA), and a Message authentication code (MAC) algorithm. It sends back to the client its choices, as well as a certificate and a server nonce.
+    - The client verifies the certificate, extracts the server's public key, generates a Pre-Master Secret (PMS), encrypts the PMS with the server's public key, and send the encrypted PMS to the server.
+    - Using the key derivation function, The client and server independently compute the Master Secret (MS) from the PMS and nonces. The MS is then sliced up to generate the 2 encryption and two MAC keys. All messages sent between client and server are encrypted and authenticated with the MAC.
+    - The client sends a MAC of all the handshake messages.
+    - The server sends a MAC of all the handshake messages.
+  - (*) Nonces are used to defend against the "connection replay attack".
+
+### 5.2. Key derivation
+
+- It is safer for Alice and Bob to each use different cryptographic keys, and also to use different keys for encryption and integrity checking. Thus, both Alice and Bob use the MS to generate 4 keys:
+  - Eb = session encryption key for data sent from Bob to Alice.
+  - Mb = session MAC key for data sent from Bob to Alice.
+  - Ea = session encryption key for data sent from Alice to Bob.
+  - Ma = session MAC key for data sent from Alice to Bob.
+- The 2 encryption keys will be used to encrypt data; the 2 MAC keys will be used to verify the integrity of the data.
+
+### 5.3. Data transfer
+
+- Since TCP is a byte-stream protocol, SSL breaks the data stream into *records*, append a MAC to each record for integrity checking, and then encrypts the record+MAC.
+- To create the MAC, Bob inputs the record data along with the key Mb into a hash function.
+- To encrypt the package record+MAC, Bob uses his session encryption key Eb. This encrypted package is then passed to TCP for transport over the Internet.
+- However, a man-in-the-middle may have the ability to insert, delete, and replace segments in the stream of TCP and change the TCP sequence numbers (which are not encrypted) -> Byte stream received by Alice will be incorrect.
+- Solution:
+  - Bob maintains a sequence number counter, which begins at 0 and increases for each SSL record he sends.
+  - Bob will include a sequence number in the MAC calculation. The MAC is now a hash of the data + Mb + current sequence number.
+  - Alice tracks Bob's sequence numbers, allowing her to verify the data integrity of a record by including the appropriate sequence number in the MAC calculation.
+
+  -> sequence numbers are used to defend again replaying individual packets during an ongoing session.
+
+### 5.4. SSL record
+
+![15.png](img/15.png)
+
+- The SSL record consists of a type field, version field, length field, data field, and MAC field.
+- The first 3 fields are not encrypted.
+- The type field indicates whether the record is a handshake message or a message that contain application data. It also used to close the SSL connection.
+- SSL at the receiving end uses the length field to extract the SSL records out of the incoming TCP byte stream.
+
+### 5.5. Connection closure
+
+- One approach would be to let Bob end send the SSL session by simply terminating the underlying TCP connection (Bob sends a TCP FIN segment to Alice).
+- To prevent man-in-the-middle attack, the type field is used to indicate whether the record serves to terminate the SSL session (although the SSL type is sent in the clear, it is authenticated at the receiver using the record's MAC).
+- By including such a field, if Alice were to receive a TCP FIN before receiveing a closure SSL record, she would known that something went wrong.

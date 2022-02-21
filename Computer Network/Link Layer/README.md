@@ -293,7 +293,6 @@
 - If the frame does not match the current rule in the chain, then the next rule in the chain is examined and so forth.
 - The user can create new chains (user-defined chain) that can be used as the 'target' of a rule.
 
-
 ### 5.2. Targets
 
 - When a frame matches a rule, then the next action performed by the kernel is specified by the target.
