@@ -104,9 +104,9 @@
 ### 2.2. Multithread
 
 - Advantage of multithread:
-  - Responsibility: multithread helps an application operate better. Although a part of the application is blocked, the application is still able to operate.
+  - Responsiveness: multithread helps an application operate better. Although a part of the application is blocked, the application is still able to operate.
   - Resource sharing: processes only share resources via some techniques such as shared memory, message sharing... These techniques are programmed only by programmers. However, threads share the information or resources as default system setting.
-  - Saving: providing resources and data for process creation is expensive. Since threads share data and resources automatically, thread creation for context-switching is faster and saves a lot of costs.
+  - Economy: providing resources and data for process creation is expensive. Since threads share data and resources automatically, thread creation for context-switching is faster and saves a lot of costs.
   - Scalability: multithread helps threads operate parallel in different processor.
 
     ![4.png](img/4.png)
