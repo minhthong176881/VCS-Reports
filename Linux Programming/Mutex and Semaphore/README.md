@@ -37,7 +37,7 @@
 
   - This solution is not as feasible in a multiprocessor environment.
   - Disabling interrupts on a multiprocessor can be time consuming.
-- The test_and_set() instruction is executed atomically: if 2 test_and_set() are executed simultaneously, they will be executed sequentially in some arbitrary order. 
+- The test_and_set() instruction is executed atomically: if 2 test_and_set() are executed simultaneously, they will be executed sequentially in some arbitrary order.
 
     ```C
     boolean test_end_set(boolean *target) {
