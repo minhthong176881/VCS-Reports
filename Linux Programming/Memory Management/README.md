@@ -9,7 +9,7 @@
 - CPU fetches instructions from memory according to the value of the program counter. These instructions may cause additional loading from and storing to specific memory addresses.
 - A typical instruction-execution cycle:
   - Fetches an instruction from memory.
-  - The instruction is tehn decoded and may cause operands to be fetched from the memory.
+  - The instruction is then decoded and may cause operands to be fetched from the memory.
   - After the instruction has been executed on the operands, results may be stored back in memory.
 
 #### 1.1.1. Basic Hardware
@@ -46,3 +46,7 @@
   - Provide many other services.
   
 #### 1.1.2. Address Binding
+
+- A program resides on a disk as a binary executable file.
+- To be executed, the program must be bought into memory and placed within a process.
+- Depending on the memory management in use, the process may be moved between disk and memory during its executation. The processes on the disk that are waiting to be bought into memory for execution form the **input queue**.
