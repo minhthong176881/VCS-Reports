@@ -382,3 +382,45 @@
 - One approach would be to let Bob end send the SSL session by simply terminating the underlying TCP connection (Bob sends a TCP FIN segment to Alice).
 - To prevent man-in-the-middle attack, the type field is used to indicate whether the record serves to terminate the SSL session (although the SSL type is sent in the clear, it is authenticated at the receiver using the record's MAC).
 - By including such a field, if Alice were to receive a TCP FIN before receiveing a closure SSL record, she would known that something went wrong.
+
+## 6. Securing UDP connections: DTLS
+
+- The **Datagram Transport Layer Security (DTLS)** protocol provides communication privacy for data gram protocols.
+- The protocol allows client and server applications to communicate in a way that is designed to prevent eavesdropping, tampering, or message forgery.
+- The DTLS protocol is based on the TLS protocol, and it provides equivalent security guarantees. However, DTLS has additional responsibility during the handshake phase:
+  - Packet loss: if 1 packet is lost at the receiving end then the sender is going to retransmit that packet again, after the timer has expired.
+  - Reordering: If the packet has reached the receiving end out of order then that packet is going to be buffered unless the intended packet has achieved.
+    - Reordering can be produced by using 2 new fields in the record: *epoc* and *sequence_number*.
+  - Large message size: If the message size is larger than the MTU (there are 2 kinds of packets in handshake which basically can be very large sized packet: key exchange and the certificates), the message will be fragmented.
+
+### 6.1. Cipher Suites
+
+![16.png](img/16.png)
+
+- Cipher suites is a collection of data that represent what kind of algorithms or what kind of elements are going to be used for providing authenticity and confidentiality for the data that is going to travel from one end to the other end of the socket.
+- The set of algorithms that cipher suites usually contain:
+  - Key exchange algorithm: used to exchange a key between 2 devices.
+  - Bulk encryption algorithm: used to encrypt the data being sent.
+  - Message authentication code (MAC) algorithm: provides data integrity checks to ensure that the data sent does not change in transit.
+  - In addition, cipher suites can include signatures and an authentication algorithm to help authenticate the server or client.
+
+### 6.2. DTLS Handshake
+
+![17.png](img/17.png)
+
+- Steps:
+  - The client sends a *ClientHello* message to the server that contains a list of supported ciphers it supports and what is the protocol version that it uses, a random number along with some important parameters.
+  - The server responds to the client with a *HelloVerifyRequest*.
+    - The server generate a stateless cookie (20-byte length crafted based on source IP, source port, destination IP, destination port, and some kind of randomness) and send to the client.
+  - The client sends the same cookie again in the  *ClientHello* to the server -> avoid DoS attack.
+  - The server sends a *ServerHello* packet to the client that contains the cipher suites and protocol version that the server supports, a random number along with few importain parameters.
+  - The server sends its certificate to the client that also contains the server public key. The client needs to verify that certificate using a CA certificate. The server can optionally sends *ServerKeyExchange* and *CertificateRequest* pakets.
+  - Once the client verifies the server, the client can optionally send the client certificate to the server.
+  - The server sends a *ServerHelloDone* packet to inform the client that everything has been provided to the client.
+  - The client use key exchange algorithm if specifed to generate a premaster secret. If no algorithm specifed, the client uses RSA as default algorithm. A *ClientKeyExchange* packet will be generated and sent to the server which includes the premaster secret.
+    - The premaster secret will be used to generate a symmetric key used for further encryption and decryption of the data.
+    - *ClientKeyExchange* need to go to server in a encrypted way using the public key that is shared in the certificate or using the server key exchange.
+  - The premaster secret along with the random numbers that have been shared in *ClientHello* and *ServerHello* will be used in the **Pseudo Random Function** (PRF(premaster secret, client random, server random)) which will generate a session key. The session key will be used to generate 6 keys on each side (enc read key, enc write key, hash read key, hash write key, iv read key, iv write key).
+  - The server send *ChangeCipherSpec* packet - the final packet of the handshake - and encrypted data to the client. The packet contains the integrity of all the handshake messages that were previously exchanged.
+  - The client will decrypt the packet using its own keys set it has generated and sends the *ChainCypherSpec* that encrypted to the server. It has the same content that the server sent.
+  - The channel now is enrypted.
