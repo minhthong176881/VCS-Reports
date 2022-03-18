@@ -335,3 +335,106 @@
 
     - First, use index value of `2` to get the third element: vectors are indexed by number, starting at zero, using `&` and `[]` which gives a reference.
     - Second, use the `get` method with the index passed as an argument.
+
+### Cutom Types
+
+***Structures***
+
+- Structs are similar to tuples in that both hold multiple related values.
+- The pieces of a struct can be different types.
+- In a struct, each piece of data is named so it's clear what the values mean.
+- To define a struct, enter the keyword `struct` and name the entire struct. Then, inside curly brackets, define the names and types of the pieces of data, which called *field*.
+
+    ```Rust
+    struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+    }
+    ```
+
+- To use a struct, create an *instance* of that struct by specifying concrete values for each of the field.
+- To get a specific value from a struct, use dot notation. If the instance is mutable, the value can be changed by using the dot notation and assigning into a particular field.
+
+    ```Rust
+    // create an instance of struct User
+    let mut user1 = User {
+        email: String::from("somemail@mail.com"),
+        username: String::from("somename"),
+        active: true,
+        sign_in_count: 1,
+    };
+    // change email of the instance
+    user1.email = String::from("newmail@mail.com");
+    ```
+
+- Note: the entire instance must be mutable, cannot mark only certain fields as mutable.
+- Create new instances from other instances:
+  - Use struct update syntax `..` that specifies the remaining fields should have the same value as the fields in the given instance.
+
+    ```Rust
+    let user2 = User {
+        email: String::from("mail2@mail.com"),
+        ..user1
+    }
+    ```
+
+- Rust also supports structs that look similar to tuples, called *typle structs*.
+  - To define a tuple struct, start with the `struct` keyword and the struct name followed by the types in the tuple.
+
+    ```Rust
+    struct Color(i32, i32, i32)
+    struct Point(i32, i32, i32)
+
+    fn main() {
+        let black = Color(0, 0, 0);
+        let origin = Point(0, 0, 0);
+    }
+    ```
+
+- Structs that don't have any fields are called *unit-like structs* because they behave similarly to `()`.
+
+    ```Rust
+    struct AlwaysEqual;
+
+    fn main() {
+        let subject = AlwaysEqual;
+    }
+    ```
+
+***Enums***
+
+- Enums are a way of defining custom data types in a different way with structs.
+- Enums used when all possible variants are known and can be enumerated.
+
+    ```Rust
+    enum IpAddrKind {
+        V4,
+        V6,
+    }
+    // V4 and V6 are variants of the enum
+    // IpAddrKind is now a custom data typs that can be used elsewhere in the code
+    ```
+
+- Create instances:
+
+    ```Rust
+    let four = IpAddrKind::V4;
+    let six = IpAddrKind::V6;
+
+    fn route(ip_kind: IpAddrKind) {}
+    ```
+
+- Associate type to variant and put data into each enum variant:
+
+    ```Rust
+    enum IpAddr {
+        V4(String),
+        V6(String),
+    }
+
+    let home = IpAddr::V4(String::from("127.0.0.1"));
+
+    let loopback = IpAddr::V6(String::from("::1"));
+    ```
