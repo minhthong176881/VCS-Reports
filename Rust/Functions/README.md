@@ -73,3 +73,57 @@
 
     // error[E0308]: mismatched types
     ```
+
+## Associataed functions & Methods
+
+- Some function are connected to a particular type. These come in 2 forms: assosicated functions, and methods.
+
+***Method***
+
+- Methods are similar to functions: declared with the `fn` keyword and a name, can have parameters and return value...
+- Methods are defined within the context of a struct (or an enum), and their first parameter is always `self`, which represents the instance of the struct the method is being called on.
+
+    ```Rust
+    struct Rectangle {
+        width: u32,
+        height: u32,
+    }
+
+    impl Rectangle {
+        fn area(&self) -> u32 {
+            self.width * self.height
+        }
+    }
+
+    fn main() {
+        let rect1 = Rectangle {
+            width: 30,
+            height: 50,
+        };
+        println!("Area = {}", rect1.area()); // result in Area = 1500
+    }
+    ```
+
+- To define a function within the context of `Rectangle`, start an `imp` (implementation) block for `Rectangle`.
+  - Everything within this `imp` block will be associated with the `Rectangle` type.
+  - Define the `area` function within the `imp` and set the first parameter to be `self`.
+  - Call the `area` method by using *method syntax*: add a dot followed by the method name, parentheses, and any arguments.
+
+***Associated Functions***
+
+- All functions defined within an `impl` block are called *associated functions* because they're associated with the type named after the `impl`.
+- Associated functions can be defined without `self` as the first parameter.
+- Associated functins are often used for constructors that will return a new instance of the struct.
+
+    ```Rust
+    impl Rectangle {
+        fn square(size: u32) -> Rectangle {
+            Rectangle {
+                width: size,
+                height: size,
+            }
+        }
+    }
+    ```
+
+- To call a associated function, use the `::` syntax with the struct name: `let sq = Rectangle::square(3);`.
