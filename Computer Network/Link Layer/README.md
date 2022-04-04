@@ -188,7 +188,7 @@
     - A table does not neccessarily contain an entry for every host and router on the subnet; some may have never been enter into the table, and others may have expired.
     - A typical expiration time for an entry is 20 minutes from when an entry is placed in an ARP table.
   - First, the sender construct a special packet called an ARP packet (includes serveral fields: the sending and receiving IP and MAC addresses, both ARP query and response packets have the same format).
-  - The sender passes an ARP query packet to the adater along with an indicatin that the adapter should send the packet to the MAC broadcast address - FF-FF-FF-FF-FF-FF.
+  - The sender passes an ARP query packet to the adater along with an indicating that the adapter should send the packet to the MAC broadcast address - FF-FF-FF-FF-FF-FF.
   - The adapter encapsulates the ARP packet in a link-layer frame, uses the broadcast address for the frame's destination address, and transmits the frame into the subnet.
   - The frame containing the ARP query is received by all the other adapters on the subnet and each adapter passes the ARP packet within the frame up to its ARP module.
   - Each of these ARP modules checks to see if its IP address matches the destination IP address in the ARP packet.
